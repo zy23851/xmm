@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.pn.mapper.UserMapper">
+
+    <!--
+        //根据账号查询用户信息
+        User findUserByCode(String userCode);
+    -->
+    <select id="findUserByCode" resultType="user">
+        select * from user_info where user_code = #{userCode} and is_delete = 0
+    </select>
+
+
+    <!--
+         //获取用户行数  总行数    带条件之后的行数
+         Integer findUserRowCount(User user);
+    -->
+    <select id="findUserRowCount" resultType="integer">
+        select count(*) from user_info
+        <where>
+            <if test="userCode != null and userCode != ''">
+                and user_code like concat('%',#{userCode},'%')
+            </if>
+            <if test="userType != null and userType !=''">
+                and user_type = #{userType}
+            </if>
+            <if test="userState != null and userState != ''">
+                and user_state = #{userState}
+            </if>
+            and is_delete = 0
+        </where>
+    </select>
+
+    <!--
+        //分页查询用户的方法
+        List<User> findUserByPage(@Param("page") Page page,@Param("user") User user);
+    -->
+
+    <select id="findUserByPage" resultType="user">
+        select t1.*,t2.user_code getCode
+        from user_info t1,user_info t2
+        where t1.create_by = t2.user_id and t1.is_delete = 0
+        <if test="user.userCode != null and user.userCode != ''">
+            and t1.user_code like concat('%',#{user.userCode},'%')
+        </if>
+        <if test="user.userType != null and user.userType !=''">
+            and t1.user_type = #{user.userType}
+        </if>
+        <if test="user.userState != null and user.userState != ''">
+            and t1.user_state = #{user.userState}
+        </if>
+        order by t1.create_time desc
+        limit #{page.limitIndex},#{page.pageSize}
+    </select>
+
+    <!--
+        //添加用户信息的方法
+        int insertUser(User user);
+    -->
+
+    <insert id="insertUser">
+        insert into user_info values(
+        null,#{userCode},#{userName},#{userPwd},null,0,0,#{createBy},now(),null,null
+        )
+    </insert>
+
+    <!--
+         //启用或禁用用户状态
+        int serStateByUid(Integer userId,String userState);
+    -->
+    <update id="serStateByUid">
+        update user_info set user_state = #{param2} where user_id = #{param1}
+    </update>
+
+<!--
+    //根据用户ids修改用户删除状态的方法
+    int setIsDeleteByUids(List<Integer> userIdList);
+-->
+    <update id="setIsDeleteByUids">
+        update user_info set is_delete = 1
+        where user_id in
+        <foreach collection="list" item="userId" open="(" close=")" separator=",">
+            #{userId}
+        </foreach>
+    </update>
+
+    <!--
+            //修改用户
+            int setUserNameByUid(User user);
+    -->
+    <update id="setUserNameByUid">
+        update user_info set user_name = #{userName},update_by = #{updateBy},update_time = now()
+        where user_id = #{userId}
+    </update>
+
+    <!--
+            //根据用户id重置密码
+            int setPwdByUid(Integer userId,String userPwd);
+    -->
+    <update id="setPwdByUid">
+        update user_info set user_pwd = #{param2} where user_id = #{param1}
+    </update>
+
+
+</mapper>
